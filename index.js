@@ -496,6 +496,8 @@ function buildModal() {
 function openModal() {
   buildModal();
   const ov = document.getElementById('aum-overlay');
+  if (!ov) return;
+  ov.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(3px);align-items:center;justify-content:center;';
   ov.classList.add('aum-open');
   renderCards();
   renderChips();
@@ -503,7 +505,9 @@ function openModal() {
 
 function closeModal() {
   const ov = document.getElementById('aum-overlay');
-  if (ov) ov.classList.remove('aum-open');
+  if (!ov) return;
+  ov.classList.remove('aum-open');
+  ov.style.display = 'none';
 }
 
 // ── Кнопка в wand-меню ────────────────────────────────────────
@@ -524,7 +528,10 @@ function injectButton() {
   item.setAttribute('role', 'listitem');
   item.title = 'AU Manager';
   item.innerHTML = `<div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div><span>AU Manager</span><span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>`;
-  item.addEventListener('click', openModal);
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    setTimeout(openModal, 50);
+  });
   container.appendChild(item);
   menu.insertBefore(container, menu.firstChild);
   updateBadge();
