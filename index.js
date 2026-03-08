@@ -495,14 +495,15 @@ function buildModal() {
 
 function openModal() {
   buildModal();
-  document.getElementById('aum-overlay').style.display = 'flex';
+  const ov = document.getElementById('aum-overlay');
+  ov.classList.add('aum-open');
   renderCards();
   renderChips();
 }
 
 function closeModal() {
   const ov = document.getElementById('aum-overlay');
-  if (ov) ov.style.display = 'none';
+  if (ov) ov.classList.remove('aum-open');
 }
 
 // ── Кнопка в wand-меню ────────────────────────────────────────
