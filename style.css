@@ -13,7 +13,9 @@
   align-items: center;
   justify-content: center;
 }
-#aum-overlay[style*="flex"] { display: flex !important; }
+#aum-overlay.aum-open {
+  display: flex !important;
+}
 
 /* ── Модалка ─────────────────────────────────────────────── */
 #aum-modal {
@@ -437,8 +439,8 @@ label.aum-head-btn { cursor: pointer; }
 
   /* Модалка на весь экран снизу (bottom sheet) */
   #aum-overlay {
-    align-items: flex-end;
-    justify-content: stretch;
+    align-items: flex-end !important;
+    justify-content: center !important;
   }
 
   #aum-modal {
