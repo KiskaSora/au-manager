@@ -1,0 +1,9 @@
+{
+  "display_name": "AU Manager",
+  "version": "1.0.0",
+  "js": "index.js",
+  "css": "style.css",
+  "author": "kiskaSora",
+  "homePage": "https://github.com/KiskaSora/au-manager",
+  "description": "Менеджер альтернативных вселенных — библиотека AU-пресетов с авто-инъекцией в промпт"
+}

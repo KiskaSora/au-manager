@@ -1,0 +1,430 @@
+/* ═══════════════════════════════════════════════════════════
+   AU Manager v2.0 — style.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Оверлей ─────────────────────────────────────────────── */
+#aum-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  align-items: center;
+  justify-content: center;
+}
+#aum-overlay[style*="flex"] { display: flex !important; }
+
+/* ── Модалка ─────────────────────────────────────────────── */
+#aum-modal {
+  width: min(720px, 96vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #141414;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+  font-family: monospace, monospace;
+  color: #ccc;
+}
+
+/* ── Шапка ───────────────────────────────────────────────── */
+#aum-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.03);
+}
+
+#aum-head-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #aaa;
+  flex: 1;
+}
+
+#aum-head-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Кнопки шапки */
+.aum-head-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background 0.15s, color 0.15s;
+}
+.aum-head-btn:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+label.aum-head-btn { cursor: pointer; }
+
+/* inject info icon */
+#aum-inject-info {
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.4;
+  padding: 0 4px;
+  transition: opacity 0.15s;
+}
+#aum-inject-info:hover { opacity: 0.9; }
+
+/* ── Тоггл инъекции ───────────────────────────────────────── */
+.aum-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: #999;
+  cursor: pointer;
+  user-select: none;
+  margin-right: 4px;
+}
+.aum-toggle-label input[type="checkbox"] { display: none; }
+
+.aum-tog {
+  width: 30px;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  position: relative;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: background 0.2s;
+}
+.aum-tog::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #888;
+  transition: transform 0.2s, background 0.2s;
+}
+.aum-tog-on { background: rgba(192,132,200,0.5); }
+.aum-tog-on::after { transform: translateX(14px); background: #c084c8; }
+
+/* ── Вкладки категорий ────────────────────────────────────── */
+#aum-cats {
+  display: flex;
+  gap: 3px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.2);
+}
+
+.aum-cat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 4px;
+  font-size: 0.73rem;
+  cursor: pointer;
+  color: #bbb;                         /* ← ВИДИМЫЙ текст */
+  background: rgba(255,255,255,0.05);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+  font-family: monospace;
+}
+.aum-cat:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.aum-cat-on {
+  background: rgba(192,132,200,0.2);
+  border-color: rgba(192,132,200,0.5);
+  color: #e0b8e8;
+}
+.aum-cat i { font-size: 0.65rem; opacity: 0.8; }
+
+/* ── Сетка карточек ───────────────────────────────────────── */
+#aum-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 7px;
+  padding: 10px 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+#aum-card-grid::-webkit-scrollbar { width: 4px; }
+#aum-card-grid::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+
+.aum-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+/* ── Карточка AU ──────────────────────────────────────────── */
+.aum-card {
+  position: relative;
+  padding: 9px 10px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(255,255,255,0.03);
+  user-select: none;
+}
+.aum-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.2);
+}
+.aum-card.aum-on {
+  background: rgba(192,132,200,0.1) !important;
+  border-color: rgba(192,132,200,0.5) !important;
+}
+
+.aum-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.aum-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  line-height: 1.2;
+  flex: 1;
+}
+
+/* Кнопки действий на карточке */
+.aum-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.aum-card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  border: none;
+  background: none;
+  color: #777;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: color 0.15s, background 0.15s;
+  padding: 0;
+}
+.aum-card-btn:hover { color: #ddd; background: rgba(255,255,255,0.1); }
+.aum-del-btn:hover { color: #f87171; }
+.aum-tog-btn.aum-tog-on { color: #c084c8; }
+
+.aum-card-cat {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #777;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.aum-card-short {
+  font-size: 0.7rem;
+  color: #999;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.aum-card-tokens {
+  font-size: 0.6rem;
+  color: #555;
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* ── Подвал ──────────────────────────────────────────────── */
+#aum-foot {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 12px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.2);
+}
+#aum-foot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.aum-foot-label {
+  font-size: 0.68rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.aum-total-tokens {
+  font-size: 0.68rem;
+  color: #c084c8;
+  font-weight: 600;
+}
+#aum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.aum-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  background: rgba(192,132,200,0.15);
+  border: 1px solid rgba(192,132,200,0.3);
+  color: #ddd;
+  white-space: nowrap;
+}
+.aum-chip-x {
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 0.6rem;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+.aum-chip-x:hover { opacity: 1; }
+.aum-none { font-size: 0.7rem; color: #555; font-style: italic; }
+
+/* ── Редактор AU ──────────────────────────────────────────── */
+.aum-editor-modal {
+  width: min(580px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #161616;
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+  font-family: monospace;
+  color: #ccc;
+}
+.aum-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: rgba(255,255,255,0.03);
+}
+.aum-editor-head button {
+  background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem;
+}
+.aum-editor-head button:hover { color: #fff; }
+.aum-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+.aum-editor-body label {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+.aum-editor-body input,
+.aum-editor-body select,
+.aum-editor-body textarea {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  color: #ddd;
+  padding: 7px 10px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+.aum-editor-body input:focus,
+.aum-editor-body select:focus,
+.aum-editor-body textarea:focus { border-color: rgba(192,132,200,0.5); }
+.aum-editor-body select option { background: #1e1e1e; }
+.aum-editor-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.2);
+}
+.aum-btn-primary {
+  padding: 6px 16px;
+  border-radius: 4px;
+  background: rgba(192,132,200,0.3);
+  border: 1px solid rgba(192,132,200,0.5);
+  color: #e0b8e8;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.aum-btn-primary:hover { background: rgba(192,132,200,0.5); color: #fff; }
+.aum-btn-sec {
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #999;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.78rem;
+  transition: background 0.15s;
+}
+.aum-btn-sec:hover { background: rgba(255,255,255,0.12); color: #ddd; }
+.aum-btn-danger {
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #f87171;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.78rem;
+  transition: background 0.15s;
+}
+.aum-btn-danger:hover { background: rgba(239,68,68,0.3); }
