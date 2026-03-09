@@ -153,11 +153,18 @@ function deleteCustomAU(id) {
 function exportJSON() {
   const s = getSettings();
   const data = { version: 2, active_aus: s.active_aus, custom_aus: s.custom_aus, enabled: s.enabled };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
+  // На мобильном Safari нужен явный append/click/remove
   const a = document.createElement('a');
-  a.href = url; a.download = 'au_manager_export.json'; a.click();
-  URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = 'au_manager_export.json';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  showToast('✓ Экспорт сохранён');
 }
 
 function importJSON(file) {
@@ -181,7 +188,46 @@ function importJSON(file) {
   reader.readAsText(file);
 }
 
-// ── Toast ──────────────────────────────────────────────────────
+async function showInfoPopup() {
+  const html = `<div style="font-family:monospace;max-width:480px;line-height:1.6;color:#ccc;">
+    <div style="font-size:1rem;font-weight:700;color:#e0b8e8;margin-bottom:12px;">
+      <i class="fa-solid fa-masks-theater"></i> AU Manager — справка
+    </div>
+
+    <div style="margin-bottom:10px;font-size:0.82rem;">
+      <b style="color:#ddd;">Что такое AU?</b><br>
+      AU (Alternate Universe) — промпты с правилами вселенной. Они вставляются в каждый запрос к ИИ, задавая контекст мира.
+    </div>
+
+    <div style="margin-bottom:10px;font-size:0.82rem;">
+      <b style="color:#ddd;"><i class="fa-solid fa-toggle-on" style="color:#c084c8"></i> Инъекция</b><br>
+      Переключатель вкл/выкл. Когда включено — активные AU отправляются ИИ как системное сообщение сразу после главного промпта.
+    </div>
+
+    <div style="margin-bottom:10px;font-size:0.82rem;">
+      <b style="color:#ddd;"><i class="fa-solid fa-plus"></i> Добавить</b><br>
+      Создать собственный AU с произвольным промптом. Они появятся в категории «Мои».
+    </div>
+
+    <div style="margin-bottom:10px;font-size:0.82rem;">
+      <b style="color:#ddd;"><i class="fa-solid fa-file-export"></i> Экспорт</b><br>
+      Сохраняет все ваши AU и активные настройки в файл <code>au_manager_export.json</code>.
+    </div>
+
+    <div style="margin-bottom:10px;font-size:0.82rem;">
+      <b style="color:#ddd;"><i class="fa-solid fa-file-import"></i> Импорт</b><br>
+      Загружает AU из ранее экспортированного файла. Существующие AU обновляются, новые добавляются.
+    </div>
+
+    <div style="font-size:0.82rem;">
+      <b style="color:#ddd;"><i class="fa-solid fa-trash-can"></i> Сброс</b><br>
+      Деактивирует все AU (не удаляет — просто снимает галочки).
+    </div>
+  </div>`;
+
+  const popup = new Popup(html, POPUP_TYPE.TEXT, '', { wide: false, large: false });
+  await popup.show();
+}
 
 function showToast(msg) {
   let t = document.getElementById('aum-toast');
@@ -238,9 +284,9 @@ function buildPopupHTML() {
     <div id="aum-head">
       <span id="aum-head-title"><i class="fa-solid fa-masks-theater"></i> AU MANAGER</span>
       <div id="aum-head-right">
-        <span id="aum-inject-info" title="Промпты AU вставляются как системное сообщение сразу после главного системного промпта.">
+        <button id="aum-inject-info" class="aum-head-btn" title="">
           <i class="fa-solid fa-circle-info"></i>
-        </span>
+        </button>
         <label class="aum-toggle-label" title="Включить/выключить инъекцию AU">
           <input type="checkbox" id="aum-inject-toggle" ${getSettings().enabled ? 'checked' : ''}>
           <span class="aum-tog ${getSettings().enabled ? 'aum-tog-on' : ''}"></span>
@@ -248,8 +294,9 @@ function buildPopupHTML() {
         </label>
         <button id="aum-btn-add" class="aum-head-btn" title="Добавить свой AU"><i class="fa-solid fa-plus"></i></button>
         <button id="aum-btn-export" class="aum-head-btn" title="Экспорт в JSON"><i class="fa-solid fa-file-export"></i></button>
-        <label class="aum-head-btn" title="Импорт из JSON" style="cursor:pointer"><i class="fa-solid fa-file-import"></i><input type="file" id="aum-import-input" accept=".json" style="display:none"></label>
-        <button id="aum-clear" class="aum-head-btn" title="Сбросить все активные AU"><i class="fa-solid fa-trash-can"></i></button>
+        <button id="aum-btn-import" class="aum-head-btn" title="Импорт из JSON"><i class="fa-solid fa-file-import"></i></button>
+        <input type="file" id="aum-import-input" accept=".json" style="display:none">
+        <button id="aum-clear" class="aum-head-btn" title="Сбросить активные AU"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     </div>
 
@@ -434,6 +481,9 @@ async function showMainPopup() {
     document.getElementById('aum-clear')?.addEventListener('click', clearAll);
     document.getElementById('aum-btn-add')?.addEventListener('click', () => openEditor(null));
     document.getElementById('aum-btn-export')?.addEventListener('click', exportJSON);
+    document.getElementById('aum-btn-import')?.addEventListener('click', () => {
+      document.getElementById('aum-import-input')?.click();
+    });
 
     document.getElementById('aum-inject-toggle')?.addEventListener('change', e => {
       getSettings().enabled = e.target.checked;
@@ -441,9 +491,7 @@ async function showMainPopup() {
       saveSettingsDebounced();
     });
 
-    document.getElementById('aum-inject-info')?.addEventListener('click', () => {
-      showToast('AU → системное сообщение после главного промпта');
-    });
+    document.getElementById('aum-inject-info')?.addEventListener('click', showInfoPopup);
 
     document.getElementById('aum-import-input')?.addEventListener('change', e => {
       if (e.target.files[0]) importJSON(e.target.files[0]);
