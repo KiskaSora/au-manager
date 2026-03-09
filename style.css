@@ -435,7 +435,13 @@ label.aum-head-btn { cursor: pointer; }
    МОБИЛЬНАЯ АДАПТАЦИЯ (v2 fix)
    ═══════════════════════════════════════════════════════════ */
 
-/* Базовый оверлей — очень высокий z-index чтобы пробить любой ST-слой */
+/* ═══════════════════════════════════════════════════════════
+   МОБИЛЬНАЯ АДАПТАЦИЯ — финальная версия
+   ВАЖНО: никогда не трогаем display у #aum-overlay!
+   JS управляет показом через style.display напрямую.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Высокий z-index — пробиваем любые ST-слои */
 #aum-overlay {
   z-index: 999999 !important;
 }
@@ -443,10 +449,10 @@ label.aum-head-btn { cursor: pointer; }
 /* ── Телефон ≤ 600px ──────────────────────────────────────── */
 @media (max-width: 600px) {
 
-  /* Модалка — шторка снизу */
+  /* Шторка снизу — ТОЛЬКО позиционирование, не display! */
   #aum-overlay {
     align-items: flex-end !important;
-    padding: 0 !important;
+    /* display НЕ трогаем — им управляет JS */
   }
 
   #aum-modal {
@@ -459,9 +465,9 @@ label.aum-head-btn { cursor: pointer; }
     border-bottom: none !important;
   }
 
-  /* Ручка-индикатор свайпа */
+  /* Ручка свайпа */
   #aum-head {
-    padding-top: 12px !important;
+    padding-top: 14px !important;
     position: relative;
   }
   #aum-head::before {
@@ -476,7 +482,6 @@ label.aum-head-btn { cursor: pointer; }
     background: rgba(255,255,255,0.2);
   }
 
-  /* Шапка компактнее */
   #aum-head-title { font-size: 0.68rem; }
 
   .aum-head-btn {
@@ -485,9 +490,10 @@ label.aum-head-btn { cursor: pointer; }
     font-size: 0.85rem !important;
   }
 
-  /* Текст «инъекция» скрыть — только тоггл */
-  .aum-toggle-label { font-size: 0 !important; gap: 0 !important; }
-  .aum-toggle-label .aum-tog { margin: 0 2px; }
+  /* Тоггл — только переключатель без текста */
+  .aum-toggle-label {
+    font-size: 0 !important;
+  }
 
   /* Категории — горизонтальный скролл */
   #aum-cats {
@@ -495,22 +501,27 @@ label.aum-head-btn { cursor: pointer; }
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding: 6px 8px !important;
     gap: 4px !important;
-    padding: 7px 8px !important;
   }
   #aum-cats::-webkit-scrollbar { display: none; }
 
   .aum-cat {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
-    padding: 7px 12px !important;
-    font-size: 0.72rem !important;
+    padding: 7px 10px !important;
+    font-size: 0 !important; /* прячем текст */
   }
-  /* Прячем текст у категорий — только иконки чтобы влезло */
-  .aum-cat span { display: none; }
-  .aum-cat i { font-size: 0.85rem !important; opacity: 1 !important; }
-  /* Для активной — показываем текст */
-  .aum-cat-on span { display: inline !important; margin-left: 5px; }
+  .aum-cat i {
+    font-size: 0.9rem !important;
+    opacity: 1 !important;
+  }
+  /* Активная — показываем текст */
+  .aum-cat-on {
+    font-size: 0.72rem !important;
+    padding: 7px 12px !important;
+  }
+  .aum-cat-on i { margin-right: 4px; }
 
   /* Карточки — 1 колонка */
   #aum-card-grid {
@@ -519,19 +530,22 @@ label.aum-head-btn { cursor: pointer; }
     padding: 8px !important;
   }
 
-  /* Карточки крупнее для пальца */
   .aum-card { padding: 12px 12px 8px !important; }
-  .aum-card-name { font-size: 0.85rem !important; }
-  .aum-card-short { font-size: 0.72rem !important; }
-  .aum-card-btn { width: 30px !important; height: 30px !important; font-size: 0.82rem !important; }
+  .aum-card-name { font-size: 0.88rem !important; }
+  .aum-card-short { font-size: 0.73rem !important; }
 
-  /* Подвал */
-  #aum-foot { padding: 8px 10px 20px !important; }
+  .aum-card-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
+  }
 
-  /* Редактор — тоже шторка снизу */
+  #aum-foot { padding: 8px 10px 22px !important; }
+
+  /* Редактор — тоже шторка */
   #aum-editor-overlay {
     align-items: flex-end !important;
-    padding: 0 !important;
+    /* display НЕ трогаем */
   }
   .aum-editor-modal {
     width: 100% !important;
@@ -542,24 +556,32 @@ label.aum-head-btn { cursor: pointer; }
     border-right: none !important;
     border-bottom: none !important;
   }
-  /* font-size 16px — iOS не делает зум при фокусе */
+  /* Предотвращаем зум на iOS при фокусе */
   .aum-editor-body input,
   .aum-editor-body select,
-  .aum-editor-body textarea { font-size: 16px !important; }
+  .aum-editor-body textarea {
+    font-size: 16px !important;
+  }
   .aum-editor-foot { padding-bottom: 24px !important; }
-  .aum-btn-primary, .aum-btn-sec, .aum-btn-danger {
-    padding: 11px 20px !important;
+  .aum-btn-primary,
+  .aum-btn-sec,
+  .aum-btn-danger {
+    padding: 11px 18px !important;
     font-size: 0.85rem !important;
   }
 }
 
 /* ── Планшет 601–900px ────────────────────────────────────── */
 @media (min-width: 601px) and (max-width: 900px) {
-  #aum-modal { width: min(96vw, 700px) !important; }
-  #aum-card-grid { grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important; }
+  #aum-modal {
+    width: min(96vw, 700px) !important;
+  }
+  #aum-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important;
+  }
 }
 
-/* ── Убираем залипающий hover на тач ──────────────────────── */
+/* ── Убираем залипающий hover на тач-экранах ─────────────── */
 @media (hover: none) and (pointer: coarse) {
   .aum-card:not(.aum-on):hover {
     background: rgba(255,255,255,0.03) !important;
