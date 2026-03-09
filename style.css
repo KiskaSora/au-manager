@@ -345,16 +345,20 @@ label.aum-head-btn { cursor: pointer; }
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
 
-  /* Отступ меньше — модалка занимает почти весь экран */
+  /* Модалка прижата к низу экрана */
   #aum-overlay {
-    padding: 8px !important;
-    align-items: center !important;
+    padding: 0 !important;
+    align-items: flex-end !important;
   }
 
   #aum-modal {
     width: 100% !important;
     max-height: 90vh !important;
-    border-radius: 10px !important;
+    border-radius: 14px 14px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* Кнопки шапки крупнее — минимум для пальца */
@@ -408,11 +412,19 @@ label.aum-head-btn { cursor: pointer; }
     font-size: 0.85rem !important;
   }
 
-  /* Редактор */
+  /* Редактор — тоже снизу */
+  #aum-editor-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
   .aum-editor-modal {
     width: 100% !important;
     max-height: 92vh !important;
-    border-radius: 10px !important;
+    border-radius: 14px 14px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* 16px на inputs — iOS не делает zoom при фокусе */

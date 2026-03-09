@@ -323,7 +323,8 @@ function openEditor(id) {
   overlay = document.createElement('div');
   overlay.id = 'aum-editor-overlay';
   // ВАЖНО: z-index выше главного оверлея (999999) — иначе редактор не виден
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;';
+  const isMobile = window.innerWidth <= 600;
+  overlay.style.cssText = `position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:${isMobile ? 'flex-end' : 'center'};justify-content:center;padding:${isMobile ? '0' : '12px'};box-sizing:border-box;`;
 
   const catOptions = CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'custom')
     .map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('');
