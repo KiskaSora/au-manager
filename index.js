@@ -497,17 +497,14 @@ function openModal() {
   buildModal();
   const ov = document.getElementById('aum-overlay');
   if (!ov) return;
-  ov.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(3px);align-items:center;justify-content:center;';
-  ov.classList.add('aum-open');
+  ov.style.display = 'flex';
   renderCards();
   renderChips();
 }
 
 function closeModal() {
   const ov = document.getElementById('aum-overlay');
-  if (!ov) return;
-  ov.classList.remove('aum-open');
-  ov.style.display = 'none';
+  if (ov) ov.style.display = 'none';
 }
 
 // ── Кнопка в wand-меню ────────────────────────────────────────
