@@ -503,9 +503,18 @@ function injectButton() {
   item.title = 'AU Manager';
   item.innerHTML = `<div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div><span>AU Manager</span><span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>`;
 
-  // КЛЮЧЕВОЙ ФИКС: НЕ используем stopPropagation — он блокирует закрытие меню ST,
-  // что на мобильном мешает открытию модалки. Просто setTimeout.
+  // На мобильном touchstart срабатывает ДО того, как ST закрывает меню через click.
+  // preventDefault() внутри touchstart отменяет последующий click — модалка открывается.
+  // На десктопе touchstart не срабатывает, работает обычный click.
+  let touchHandled = false;
+  item.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchHandled = true;
+    setTimeout(openModal, 50);
+  }, { passive: false });
+
   item.addEventListener('click', () => {
+    if (touchHandled) { touchHandled = false; return; }
     setTimeout(openModal, 10);
   });
 
