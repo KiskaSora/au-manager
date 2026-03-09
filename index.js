@@ -494,22 +494,23 @@ function setupEventListeners() {
 
 // ── Init ───────────────────────────────────────────────────────
 
+let _initialized = false;
+
+function init() {
+  if (_initialized) return;
+  if (!document.getElementById('extensionsMenu')) return;
+  _initialized = true;
+  createUI();
+  setupEventListeners();
+  console.log('[AU Manager] initialized ✓');
+}
+
 jQuery(async () => {
   console.log('[AU Manager] jQuery ready');
   getSettings();
   eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, onBeforeCombinePrompts);
-
-  // Ждём APP_READY как делают все нормальные расширения ST
-  eventSource.on(event_types.APP_READY, () => {
-    createUI();
-    setupEventListeners();
-  });
-
-  // Запасной вариант если APP_READY уже был
-  if (document.getElementById('extensionsMenu')) {
-    createUI();
-    setupEventListeners();
-  }
-
+  eventSource.on(event_types.APP_READY, init);
+  // Если APP_READY уже был — пробуем сразу
+  setTimeout(init, 300);
   console.log('[AU Manager] v2.0 loaded ✓');
 });

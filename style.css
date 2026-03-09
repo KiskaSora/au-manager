@@ -9,8 +9,9 @@
   flex-direction: column;
   font-family: monospace, monospace;
   color: #ccc;
-  min-width: 320px;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   gap: 0;
 }
 
