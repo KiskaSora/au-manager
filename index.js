@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════
 //  AU Manager — SillyTavern Extension v2.0
-//  + мобильная поддержка (свайп, scroll lock, z-index fix)
 // ═══════════════════════════════════════════════════════════
 
 import { extension_settings } from '../../../extensions.js';
@@ -169,8 +168,12 @@ function importJSON(file) {
       if (Array.isArray(data.custom_aus)) {
         const existingIds = new Set(s.custom_aus.map(a => a.id));
         data.custom_aus.forEach(au => {
-          if (existingIds.has(au.id)) { const idx = s.custom_aus.findIndex(a => a.id === au.id); s.custom_aus[idx] = au; }
-          else s.custom_aus.push(au);
+          if (existingIds.has(au.id)) {
+            const idx = s.custom_aus.findIndex(a => a.id === au.id);
+            s.custom_aus[idx] = au;
+          } else {
+            s.custom_aus.push(au);
+          }
         });
       }
       if (Array.isArray(data.active_aus)) s.active_aus = data.active_aus;
@@ -188,7 +191,7 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'aum-toast';
-    t.style.cssText = 'position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:#ddd;padding:10px 20px;border-radius:6px;font-size:0.8rem;font-family:monospace;z-index:99999999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:90vw;text-align:center;';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:#ddd;padding:10px 20px;border-radius:6px;font-size:0.8rem;font-family:monospace;z-index:99999999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:90vw;text-align:center;';
     document.body.appendChild(t);
   }
   t.textContent = msg; t.style.opacity = '1';
@@ -207,62 +210,6 @@ function onBeforeCombinePrompts(chat) {
   const msg = { role: 'system', content: `[AU SETTINGS — прочитай и следуй этим правилам мира]\n${body}` };
   const arr = Array.isArray(chat) ? chat : (chat && Array.isArray(chat.chat) ? chat.chat : null);
   if (arr) arr.splice(1, 0, msg);
-}
-
-// ── Scroll lock (правильный способ для мобильных) ─────────────
-
-function lockScroll() {
-  if (document.body.dataset.aumLocked) return;
-  const scrollY = window.scrollY;
-  document.body.style.cssText += `;position:fixed;top:-${scrollY}px;left:0;right:0;overflow:hidden;`;
-  document.body.dataset.aumLocked = scrollY;
-}
-
-function unlockScroll() {
-  const scrollY = parseInt(document.body.dataset.aumLocked || '0');
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.left = '';
-  document.body.style.right = '';
-  document.body.style.overflow = '';
-  delete document.body.dataset.aumLocked;
-  window.scrollTo(0, scrollY);
-}
-
-// ── Свайп вниз для закрытия ────────────────────────────────────
-
-function attachSwipeToClose(modal, onClose) {
-  let startY = 0, currentDelta = 0, dragging = false;
-
-  modal.addEventListener('touchstart', (e) => {
-    // Только по шапке (верхние 60px)
-    const rect = modal.getBoundingClientRect();
-    if (e.touches[0].clientY > rect.top + 60) return;
-    startY = e.touches[0].clientY;
-    dragging = true;
-    modal.style.willChange = 'transform';
-  }, { passive: true });
-
-  modal.addEventListener('touchmove', (e) => {
-    if (!dragging) return;
-    currentDelta = Math.max(0, e.touches[0].clientY - startY);
-    modal.style.transform = `translateY(${currentDelta}px)`;
-    modal.style.transition = 'none';
-  }, { passive: true });
-
-  modal.addEventListener('touchend', () => {
-    if (!dragging) return;
-    dragging = false;
-    modal.style.willChange = '';
-    modal.style.transition = 'transform 0.25s ease';
-    if (currentDelta > 90) {
-      modal.style.transform = `translateY(100%)`;
-      setTimeout(onClose, 220);
-    } else {
-      modal.style.transform = '';
-    }
-    currentDelta = 0;
-  }, { passive: true });
 }
 
 // ── UI state ───────────────────────────────────────────────────
@@ -375,8 +322,8 @@ function openEditor(id) {
 
   overlay = document.createElement('div');
   overlay.id = 'aum-editor-overlay';
-  // ФИКС: z-index ВЫШЕ главного оверлея (999999)
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center;';
+  // ВАЖНО: z-index выше главного оверлея (999999) — иначе редактор не виден
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;';
 
   const catOptions = CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'custom')
     .map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('');
@@ -406,9 +353,6 @@ function openEditor(id) {
     </div>`;
 
   document.body.appendChild(overlay);
-
-  const modal = overlay.querySelector('.aum-editor-modal');
-  attachSwipeToClose(modal, () => overlay.remove());
 
   const promptEl = overlay.querySelector('#aum-ed-prompt');
   const tokEl = overlay.querySelector('#aum-ed-tokcount');
@@ -518,9 +462,6 @@ function buildModal() {
     });
   });
 
-  // Свайп вниз по шапке = закрыть
-  attachSwipeToClose(el.querySelector('#aum-modal'), closeModal);
-
   renderCards();
   renderChips();
 }
@@ -530,7 +471,6 @@ function openModal() {
   const ov = document.getElementById('aum-overlay');
   if (!ov) return;
   ov.style.display = 'flex';
-  lockScroll();
   renderCards();
   renderChips();
 }
@@ -538,7 +478,6 @@ function openModal() {
 function closeModal() {
   const ov = document.getElementById('aum-overlay');
   if (ov) ov.style.display = 'none';
-  unlockScroll();
 }
 
 // ── Кнопка в extensionsMenu ────────────────────────────────────
@@ -546,11 +485,9 @@ function closeModal() {
 function injectButton() {
   if (document.getElementById('aum_wand_container')) return false;
 
-  // Ищем меню расширений — несколько вариантов для разных версий ST и мобильной
   const menu = document.getElementById('extensionsMenu')
     || document.querySelector('.extensions_block')
-    || document.querySelector('#extensionsMenuList')
-    || document.querySelector('[id*="extension"][id*="menu" i]');
+    || document.querySelector('#extensionsMenuList');
   if (!menu) return false;
 
   const container = document.createElement('div');
@@ -565,14 +502,11 @@ function injectButton() {
   item.title = 'AU Manager';
   item.innerHTML = `<div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div><span>AU Manager</span><span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>`;
 
-  function handleOpen(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    setTimeout(openModal, 50);
-  }
-  // И click, и touchend — для надёжности на мобильном
-  item.addEventListener('click', handleOpen);
-  item.addEventListener('touchend', handleOpen, { passive: false });
+  // КЛЮЧЕВОЙ ФИКС: НЕ используем stopPropagation — он блокирует закрытие меню ST,
+  // что на мобильном мешает открытию модалки. Просто setTimeout.
+  item.addEventListener('click', () => {
+    setTimeout(openModal, 10);
+  });
 
   container.appendChild(item);
   menu.insertBefore(container, menu.firstChild);
@@ -596,14 +530,12 @@ jQuery(async () => {
   tryInject();
   eventSource.on(event_types.APP_READY, tryInject);
 
-  // Переинъекция при открытии wand-меню (десктоп и мобильный)
-  const menuSelectors = '#extensionsMenuButton, [data-id="extensionsMenu"], .drawer-toggle, #extensionMenuHeader, .fa-magic, .fa-wand-magic-sparkles';
+  // Переинъекция при открытии меню (ST скрывает/показывает элементы динамически)
   document.addEventListener('click', e => {
-    if (e.target.closest(menuSelectors)) setTimeout(injectButton, 80);
+    if (e.target.closest('#extensionsMenuButton, [data-id="extensionsMenu"]')) {
+      setTimeout(injectButton, 80);
+    }
   });
-  document.addEventListener('touchend', e => {
-    if (e.target.closest(menuSelectors)) setTimeout(injectButton, 100);
-  }, { passive: true });
 
   console.log('[AU Manager] v2.0 loaded ✓');
 });
