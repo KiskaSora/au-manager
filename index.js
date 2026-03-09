@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 //  AU Manager — SillyTavern Extension v2.0
-//  + кастомные AU, импорт/экспорт, счётчик токенов, редактор
+//  + мобильная поддержка (свайп, scroll lock, z-index fix)
 // ═══════════════════════════════════════════════════════════
 
 import { extension_settings } from '../../../extensions.js';
@@ -9,12 +9,10 @@ import { eventSource, event_types, saveSettingsDebounced } from '../../../../scr
 const EXT_NAME = 'au_manager';
 console.log('[AU Manager] v2.0 loading...');
 
-// ── Токены: грубая оценка (~4 символа = 1 токен) ─────────────
 function countTokens(text) {
   return Math.ceil((text || '').length / 4);
 }
 
-// ── Категории ─────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',      label: 'Все',      icon: 'fa-border-all'     },
   { id: 'dynamics', label: 'Динамики', icon: 'fa-arrows-up-down' },
@@ -26,7 +24,6 @@ const CATEGORIES = [
   { id: 'custom',   label: 'Мои',      icon: 'fa-star'           },
 ];
 
-// ── Встроенная библиотека AU ───────────────────────────────────
 const BUILTIN_LIBRARY = [
   { id: 'omegaverse', cat: 'dynamics', name: 'Омегаверс', short: 'A/B/O, феромоны, иерархия, метки',
     prompt: `[AU — Omegaverse/A-B-O: A secondary biological sex system exists. Alphas: dominant, pheromone-emitting, rut cycles, capable of bonding bites that create permanent claims. Betas: neutral baseline. Omegas: heat cycles, heightened instincts and emotional sensitivity, can be marked/claimed. All retain full personal agency. Scent is the primary channel for emotion, attraction, and social signaling.]` },
@@ -108,7 +105,6 @@ function getSettings() {
   return extension_settings[EXT_NAME];
 }
 
-// Полная библиотека = встроенные + кастомные
 function getFullLibrary() {
   const custom = getSettings().custom_aus.map(a => ({ ...a, isCustom: true }));
   return [...BUILTIN_LIBRARY, ...custom];
@@ -133,7 +129,7 @@ function clearAll() {
   syncUI();
 }
 
-// ── Кастомные AU: CRUD ─────────────────────────────────────────
+// ── Кастомные AU ──────────────────────────────────────────────
 
 function saveCustomAU(data) {
   const s = getSettings();
@@ -152,22 +148,15 @@ function deleteCustomAU(id) {
   syncUI();
 }
 
-// ── Импорт / Экспорт JSON ─────────────────────────────────────
+// ── Импорт / Экспорт ──────────────────────────────────────────
 
 function exportJSON() {
   const s = getSettings();
-  const data = {
-    version: 2,
-    active_aus: s.active_aus,
-    custom_aus: s.custom_aus,
-    enabled: s.enabled,
-  };
+  const data = { version: 2, active_aus: s.active_aus, custom_aus: s.custom_aus, enabled: s.enabled };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'au_manager_export.json';
-  a.click();
+  a.href = url; a.download = 'au_manager_export.json'; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -178,50 +167,36 @@ function importJSON(file) {
       const data = JSON.parse(e.target.result);
       const s = getSettings();
       if (Array.isArray(data.custom_aus)) {
-        // Merge: не затираем существующие, добавляем новые
         const existingIds = new Set(s.custom_aus.map(a => a.id));
         data.custom_aus.forEach(au => {
-          if (existingIds.has(au.id)) {
-            const idx = s.custom_aus.findIndex(a => a.id === au.id);
-            s.custom_aus[idx] = au;
-          } else {
-            s.custom_aus.push(au);
-          }
+          if (existingIds.has(au.id)) { const idx = s.custom_aus.findIndex(a => a.id === au.id); s.custom_aus[idx] = au; }
+          else s.custom_aus.push(au);
         });
       }
       if (Array.isArray(data.active_aus)) s.active_aus = data.active_aus;
       if (typeof data.enabled === 'boolean') s.enabled = data.enabled;
-      saveSettingsDebounced();
-      syncUI();
-      showToast('✓ Импорт выполнен');
-    } catch (err) {
-      showToast('✗ Ошибка: невалидный JSON');
-    }
+      saveSettingsDebounced(); syncUI(); showToast('✓ Импорт выполнен');
+    } catch (err) { showToast('✗ Ошибка: невалидный JSON'); }
   };
   reader.readAsText(file);
 }
 
-// ── Toast уведомления ─────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────────────
 
 function showToast(msg) {
   let t = document.getElementById('aum-toast');
   if (!t) {
     t = document.createElement('div');
     t.id = 'aum-toast';
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:#ddd;padding:8px 18px;border-radius:4px;font-size:0.8rem;font-family:monospace;z-index:99999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;';
+    t.style.cssText = 'position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:#ddd;padding:10px 20px;border-radius:6px;font-size:0.8rem;font-family:monospace;z-index:99999999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:90vw;text-align:center;';
     document.body.appendChild(t);
   }
-  t.textContent = msg;
-  t.style.opacity = '1';
+  t.textContent = msg; t.style.opacity = '1';
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
 }
 
 // ── Prompt injection ───────────────────────────────────────────
-// Промпты AU вставляются как системное сообщение СРАЗУ ПОСЛЕ
-// первого системного промпта (позиция 1 в массиве chat).
-// Это означает что ИИ получает AU-контекст в начале каждого
-// запроса — так же как Author Note с глубиной 0.
 
 function onBeforeCombinePrompts(chat) {
   const s = getSettings();
@@ -234,6 +209,62 @@ function onBeforeCombinePrompts(chat) {
   if (arr) arr.splice(1, 0, msg);
 }
 
+// ── Scroll lock (правильный способ для мобильных) ─────────────
+
+function lockScroll() {
+  if (document.body.dataset.aumLocked) return;
+  const scrollY = window.scrollY;
+  document.body.style.cssText += `;position:fixed;top:-${scrollY}px;left:0;right:0;overflow:hidden;`;
+  document.body.dataset.aumLocked = scrollY;
+}
+
+function unlockScroll() {
+  const scrollY = parseInt(document.body.dataset.aumLocked || '0');
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.overflow = '';
+  delete document.body.dataset.aumLocked;
+  window.scrollTo(0, scrollY);
+}
+
+// ── Свайп вниз для закрытия ────────────────────────────────────
+
+function attachSwipeToClose(modal, onClose) {
+  let startY = 0, currentDelta = 0, dragging = false;
+
+  modal.addEventListener('touchstart', (e) => {
+    // Только по шапке (верхние 60px)
+    const rect = modal.getBoundingClientRect();
+    if (e.touches[0].clientY > rect.top + 60) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+    modal.style.willChange = 'transform';
+  }, { passive: true });
+
+  modal.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    currentDelta = Math.max(0, e.touches[0].clientY - startY);
+    modal.style.transform = `translateY(${currentDelta}px)`;
+    modal.style.transition = 'none';
+  }, { passive: true });
+
+  modal.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    modal.style.willChange = '';
+    modal.style.transition = 'transform 0.25s ease';
+    if (currentDelta > 90) {
+      modal.style.transform = `translateY(100%)`;
+      setTimeout(onClose, 220);
+    } else {
+      modal.style.transform = '';
+    }
+    currentDelta = 0;
+  }, { passive: true });
+}
+
 // ── UI state ───────────────────────────────────────────────────
 
 let currentCat = 'all';
@@ -241,10 +272,7 @@ let currentCat = 'all';
 function syncUI() {
   updateBadge();
   updateTotalTokens();
-  if (document.getElementById('aum-card-grid')) {
-    renderCards();
-    renderChips();
-  }
+  if (document.getElementById('aum-card-grid')) { renderCards(); renderChips(); }
 }
 
 function updateBadge() {
@@ -258,8 +286,7 @@ function updateBadge() {
 function updateTotalTokens() {
   const el = document.getElementById('aum-total-tokens');
   if (!el) return;
-  const active = getActiveAUs();
-  const total = active.reduce((s, a) => s + countTokens(a.prompt), 0);
+  const total = getActiveAUs().reduce((s, a) => s + countTokens(a.prompt), 0);
   el.textContent = total > 0 ? `~${total} токенов` : '';
 }
 
@@ -312,7 +339,6 @@ function renderCards() {
       if (confirm(`Удалить «${getFullLibrary().find(a=>a.id===btn.dataset.id)?.name}»?`)) deleteCustomAU(btn.dataset.id);
     })
   );
-  // Клик по карточке = тоггл
   grid.querySelectorAll('.aum-card').forEach(card =>
     card.addEventListener('click', () => toggleAU(card.dataset.id))
   );
@@ -349,7 +375,8 @@ function openEditor(id) {
 
   overlay = document.createElement('div');
   overlay.id = 'aum-editor-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+  // ФИКС: z-index ВЫШЕ главного оверлея (999999)
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center;';
 
   const catOptions = CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'custom')
     .map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('');
@@ -362,11 +389,11 @@ function openEditor(id) {
       </div>
       <div class="aum-editor-body">
         <label>Название</label>
-        <input id="aum-ed-name" type="text" placeholder="Название AU" value="${existing?.name || ''}">
+        <input id="aum-ed-name" type="text" autocomplete="off" placeholder="Название AU" value="${existing?.name || ''}">
         <label>Категория</label>
         <select id="aum-ed-cat">${catOptions}</select>
         <label>Краткое описание</label>
-        <input id="aum-ed-short" type="text" placeholder="для карточки" value="${existing?.short || ''}">
+        <input id="aum-ed-short" type="text" autocomplete="off" placeholder="для карточки" value="${existing?.short || ''}">
         <label>Промпт для ИИ <span id="aum-ed-tokcount" style="opacity:0.5;font-size:0.7rem;margin-left:8px;"></span></label>
         <textarea id="aum-ed-prompt" rows="8" placeholder="Текст промпта который получит ИИ...">${existing?.prompt || ''}</textarea>
       </div>
@@ -379,6 +406,9 @@ function openEditor(id) {
     </div>`;
 
   document.body.appendChild(overlay);
+
+  const modal = overlay.querySelector('.aum-editor-modal');
+  attachSwipeToClose(modal, () => overlay.remove());
 
   const promptEl = overlay.querySelector('#aum-ed-prompt');
   const tokEl = overlay.querySelector('#aum-ed-tokcount');
@@ -421,7 +451,7 @@ function buildModal() {
       <div id="aum-head">
         <span id="aum-head-title"><i class="fa-solid fa-masks-theater"></i> AU MANAGER</span>
         <div id="aum-head-right">
-          <span id="aum-inject-info" title="Промпты AU вставляются как системное сообщение сразу после главного системного промпта. ИИ получает AU-контекст в каждом запросе.">
+          <span id="aum-inject-info" title="Промпты AU вставляются как системное сообщение сразу после главного системного промпта.">
             <i class="fa-solid fa-circle-info"></i>
           </span>
           <label class="aum-toggle-label" title="Включить/выключить инъекцию AU в промпт">
@@ -469,12 +499,11 @@ function buildModal() {
   });
 
   el.querySelector('#aum-inject-info').addEventListener('click', () => {
-    showToast('AU → системное сообщение после главного промпта → ИИ читает при каждой генерации');
+    showToast('AU → системное сообщение после главного промпта');
   });
 
   el.querySelector('#aum-btn-add').addEventListener('click', () => openEditor(null));
   el.querySelector('#aum-btn-export').addEventListener('click', exportJSON);
-
   el.querySelector('#aum-import-input').addEventListener('change', e => {
     if (e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = '';
@@ -489,6 +518,9 @@ function buildModal() {
     });
   });
 
+  // Свайп вниз по шапке = закрыть
+  attachSwipeToClose(el.querySelector('#aum-modal'), closeModal);
+
   renderCards();
   renderChips();
 }
@@ -498,6 +530,7 @@ function openModal() {
   const ov = document.getElementById('aum-overlay');
   if (!ov) return;
   ov.style.display = 'flex';
+  lockScroll();
   renderCards();
   renderChips();
 }
@@ -505,13 +538,19 @@ function openModal() {
 function closeModal() {
   const ov = document.getElementById('aum-overlay');
   if (ov) ov.style.display = 'none';
+  unlockScroll();
 }
 
-// ── Кнопка в wand-меню ────────────────────────────────────────
+// ── Кнопка в extensionsMenu ────────────────────────────────────
 
 function injectButton() {
   if (document.getElementById('aum_wand_container')) return false;
-  const menu = document.getElementById('extensionsMenu');
+
+  // Ищем меню расширений — несколько вариантов для разных версий ST и мобильной
+  const menu = document.getElementById('extensionsMenu')
+    || document.querySelector('.extensions_block')
+    || document.querySelector('#extensionsMenuList')
+    || document.querySelector('[id*="extension"][id*="menu" i]');
   if (!menu) return false;
 
   const container = document.createElement('div');
@@ -525,10 +564,16 @@ function injectButton() {
   item.setAttribute('role', 'listitem');
   item.title = 'AU Manager';
   item.innerHTML = `<div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div><span>AU Manager</span><span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>`;
-  item.addEventListener('click', e => {
+
+  function handleOpen(e) {
     e.stopPropagation();
+    e.preventDefault();
     setTimeout(openModal, 50);
-  });
+  }
+  // И click, и touchend — для надёжности на мобильном
+  item.addEventListener('click', handleOpen);
+  item.addEventListener('touchend', handleOpen, { passive: false });
+
   container.appendChild(item);
   menu.insertBefore(container, menu.firstChild);
   updateBadge();
@@ -546,16 +591,19 @@ jQuery(async () => {
   let attempts = 0;
   function tryInject() {
     if (injectButton()) return;
-    if (attempts++ < 30) setTimeout(tryInject, 400);
+    if (attempts++ < 40) setTimeout(tryInject, 400);
   }
   tryInject();
   eventSource.on(event_types.APP_READY, tryInject);
 
+  // Переинъекция при открытии wand-меню (десктоп и мобильный)
+  const menuSelectors = '#extensionsMenuButton, [data-id="extensionsMenu"], .drawer-toggle, #extensionMenuHeader, .fa-magic, .fa-wand-magic-sparkles';
   document.addEventListener('click', e => {
-    if (e.target.closest('#extensionsMenuButton, [data-id="extensionsMenu"]')) {
-      setTimeout(injectButton, 60);
-    }
+    if (e.target.closest(menuSelectors)) setTimeout(injectButton, 80);
   });
+  document.addEventListener('touchend', e => {
+    if (e.target.closest(menuSelectors)) setTimeout(injectButton, 100);
+  }, { passive: true });
 
   console.log('[AU Manager] v2.0 loaded ✓');
 });
