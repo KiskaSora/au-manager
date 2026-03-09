@@ -1,9 +1,12 @@
 // ═══════════════════════════════════════════════════════════
 //  AU Manager — SillyTavern Extension v2.0
+//  Использует нативный Popup ST (как MemoryBooks) — работает
+//  и на десктопе, и на мобильном без велосипедов.
 // ═══════════════════════════════════════════════════════════
 
 import { extension_settings } from '../../../extensions.js';
 import { eventSource, event_types, saveSettingsDebounced } from '../../../../script.js';
+import { Popup, POPUP_TYPE } from '../../../popup.js';
 
 const EXT_NAME = 'au_manager';
 console.log('[AU Manager] v2.0 loading...');
@@ -128,8 +131,6 @@ function clearAll() {
   syncUI();
 }
 
-// ── Кастомные AU ──────────────────────────────────────────────
-
 function saveCustomAU(data) {
   const s = getSettings();
   const idx = s.custom_aus.findIndex(a => a.id === data.id);
@@ -168,18 +169,14 @@ function importJSON(file) {
       if (Array.isArray(data.custom_aus)) {
         const existingIds = new Set(s.custom_aus.map(a => a.id));
         data.custom_aus.forEach(au => {
-          if (existingIds.has(au.id)) {
-            const idx = s.custom_aus.findIndex(a => a.id === au.id);
-            s.custom_aus[idx] = au;
-          } else {
-            s.custom_aus.push(au);
-          }
+          if (existingIds.has(au.id)) { const idx = s.custom_aus.findIndex(a => a.id === au.id); s.custom_aus[idx] = au; }
+          else s.custom_aus.push(au);
         });
       }
       if (Array.isArray(data.active_aus)) s.active_aus = data.active_aus;
       if (typeof data.enabled === 'boolean') s.enabled = data.enabled;
       saveSettingsDebounced(); syncUI(); showToast('✓ Импорт выполнен');
-    } catch (err) { showToast('✗ Ошибка: невалидный JSON'); }
+    } catch { showToast('✗ Ошибка: невалидный JSON'); }
   };
   reader.readAsText(file);
 }
@@ -191,7 +188,7 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'aum-toast';
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:#ddd;padding:10px 20px;border-radius:6px;font-size:0.8rem;font-family:monospace;z-index:99999999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:90vw;text-align:center;';
+    t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.95);color:#ddd;padding:10px 20px;border-radius:6px;font-size:0.8rem;font-family:monospace;z-index:99999999;border:1px solid rgba(255,255,255,0.15);pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:90vw;text-align:center;';
     document.body.appendChild(t);
   }
   t.textContent = msg; t.style.opacity = '1';
@@ -215,26 +212,64 @@ function onBeforeCombinePrompts(chat) {
 // ── UI state ───────────────────────────────────────────────────
 
 let currentCat = 'all';
+let currentPopup = null;
 
 function syncUI() {
   updateBadge();
   updateTotalTokens();
-  if (document.getElementById('aum-card-grid')) { renderCards(); renderChips(); }
+  const grid = document.getElementById('aum-card-grid');
+  if (grid) { renderCards(); renderChips(); }
 }
 
 function updateBadge() {
   const n = getSettings().active_aus.length;
-  const badge = document.getElementById('aum-badge');
-  if (!badge) return;
-  badge.textContent = n || '';
-  badge.style.display = n > 0 ? 'inline-flex' : 'none';
+  $('#aum-badge').text(n || '').toggle(n > 0);
 }
 
 function updateTotalTokens() {
-  const el = document.getElementById('aum-total-tokens');
-  if (!el) return;
   const total = getActiveAUs().reduce((s, a) => s + countTokens(a.prompt), 0);
-  el.textContent = total > 0 ? `~${total} токенов` : '';
+  $('#aum-total-tokens').text(total > 0 ? `~${total} токенов` : '');
+}
+
+// ── Строим HTML контент для попапа ────────────────────────────
+
+function buildPopupHTML() {
+  return `<div id="aum-modal">
+    <div id="aum-head">
+      <span id="aum-head-title"><i class="fa-solid fa-masks-theater"></i> AU MANAGER</span>
+      <div id="aum-head-right">
+        <span id="aum-inject-info" title="Промпты AU вставляются как системное сообщение сразу после главного системного промпта.">
+          <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <label class="aum-toggle-label" title="Включить/выключить инъекцию AU">
+          <input type="checkbox" id="aum-inject-toggle" ${getSettings().enabled ? 'checked' : ''}>
+          <span class="aum-tog ${getSettings().enabled ? 'aum-tog-on' : ''}"></span>
+          <span class="aum-inj-label">инъекция</span>
+        </label>
+        <button id="aum-btn-add" class="aum-head-btn" title="Добавить свой AU"><i class="fa-solid fa-plus"></i></button>
+        <button id="aum-btn-export" class="aum-head-btn" title="Экспорт в JSON"><i class="fa-solid fa-file-export"></i></button>
+        <label class="aum-head-btn" title="Импорт из JSON" style="cursor:pointer"><i class="fa-solid fa-file-import"></i><input type="file" id="aum-import-input" accept=".json" style="display:none"></label>
+        <button id="aum-clear" class="aum-head-btn" title="Сбросить все активные AU"><i class="fa-solid fa-trash-can"></i></button>
+      </div>
+    </div>
+
+    <div id="aum-cats">
+      ${CATEGORIES.map((c, i) => `
+        <button class="aum-cat${i === 0 ? ' aum-cat-on' : ''}" data-cat="${c.id}">
+          <i class="fa-solid ${c.icon}"></i><span>${c.label}</span>
+        </button>`).join('')}
+    </div>
+
+    <div id="aum-card-grid"></div>
+
+    <div id="aum-foot">
+      <div id="aum-foot-top">
+        <span class="aum-foot-label"><i class="fa-solid fa-circle-check"></i> активно:</span>
+        <span id="aum-total-tokens" class="aum-total-tokens"></span>
+      </div>
+      <div id="aum-chips"></div>
+    </div>
+  </div>`;
 }
 
 // ── Карточки ───────────────────────────────────────────────────
@@ -261,9 +296,9 @@ function renderCards() {
       <div class="aum-card-top">
         <span class="aum-card-name">${au.name}</span>
         <div class="aum-card-actions">
-          <button class="aum-card-btn aum-edit-btn" data-id="${au.id}" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
-          ${au.isCustom ? `<button class="aum-card-btn aum-del-btn" data-id="${au.id}" title="Удалить"><i class="fa-solid fa-trash"></i></button>` : ''}
-          <button class="aum-card-btn aum-tog-btn${on ? ' aum-tog-on' : ''}" data-id="${au.id}" title="${on ? 'Выключить' : 'Включить'}">
+          <button class="aum-card-btn aum-edit-btn" data-id="${au.id}"><i class="fa-solid fa-pen"></i></button>
+          ${au.isCustom ? `<button class="aum-card-btn aum-del-btn" data-id="${au.id}"><i class="fa-solid fa-trash"></i></button>` : ''}
+          <button class="aum-card-btn aum-tog-btn${on ? ' aum-tog-on' : ''}" data-id="${au.id}">
             <i class="fa-solid ${on ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
           </button>
         </div>
@@ -283,7 +318,7 @@ function renderCards() {
   grid.querySelectorAll('.aum-del-btn').forEach(btn =>
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      if (confirm(`Удалить «${getFullLibrary().find(a=>a.id===btn.dataset.id)?.name}»?`)) deleteCustomAU(btn.dataset.id);
+      if (confirm(`Удалить «${getFullLibrary().find(a => a.id === btn.dataset.id)?.name}»?`)) deleteCustomAU(btn.dataset.id);
     })
   );
   grid.querySelectorAll('.aum-card').forEach(card =>
@@ -291,7 +326,7 @@ function renderCards() {
   );
 }
 
-// ── Чипы активных AU ──────────────────────────────────────────
+// ── Чипы ──────────────────────────────────────────────────────
 
 function renderChips() {
   const wrap = document.getElementById('aum-chips');
@@ -311,218 +346,150 @@ function renderChips() {
   updateTotalTokens();
 }
 
-// ── Редактор AU ────────────────────────────────────────────────
+// ── Редактор AU (тоже через Popup ST) ─────────────────────────
 
-function openEditor(id) {
+async function openEditor(id) {
   const existing = id ? getFullLibrary().find(a => a.id === id) : null;
   const isNew = !existing;
-
-  let overlay = document.getElementById('aum-editor-overlay');
-  if (overlay) overlay.remove();
-
-  overlay = document.createElement('div');
-  overlay.id = 'aum-editor-overlay';
-  // ВАЖНО: z-index выше главного оверлея (999999) — иначе редактор не виден
-  const isMobile = window.innerWidth <= 600;
-  overlay.style.cssText = `position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.75);display:flex;align-items:${isMobile ? 'flex-end' : 'center'};justify-content:center;padding:${isMobile ? '0' : '12px'};box-sizing:border-box;`;
 
   const catOptions = CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'custom')
     .map(c => `<option value="${c.id}" ${existing?.cat === c.id ? 'selected' : ''}>${c.label}</option>`).join('');
 
-  overlay.innerHTML = `
-    <div class="aum-editor-modal">
-      <div class="aum-editor-head">
-        <span>${isNew ? '➕ Новый AU' : '✏️ Редактировать AU'}</span>
-        <button id="aum-editor-close"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="aum-editor-body">
-        <label>Название</label>
-        <input id="aum-ed-name" type="text" autocomplete="off" placeholder="Название AU" value="${existing?.name || ''}">
-        <label>Категория</label>
-        <select id="aum-ed-cat">${catOptions}</select>
-        <label>Краткое описание</label>
-        <input id="aum-ed-short" type="text" autocomplete="off" placeholder="для карточки" value="${existing?.short || ''}">
-        <label>Промпт для ИИ <span id="aum-ed-tokcount" style="opacity:0.5;font-size:0.7rem;margin-left:8px;"></span></label>
-        <textarea id="aum-ed-prompt" rows="8" placeholder="Текст промпта который получит ИИ...">${existing?.prompt || ''}</textarea>
-      </div>
-      <div class="aum-editor-foot">
-        ${!isNew && existing?.isCustom ? '<button id="aum-ed-delete" class="aum-btn-danger">Удалить</button>' : ''}
-        <span style="flex:1"></span>
-        <button id="aum-ed-cancel" class="aum-btn-sec">Отмена</button>
-        <button id="aum-ed-save" class="aum-btn-primary">Сохранить</button>
-      </div>
-    </div>`;
+  const html = `<div class="aum-editor-inner">
+    <div class="aum-editor-title">${isNew ? '➕ Новый AU' : '✏️ Редактировать AU'}</div>
+    <label>Название</label>
+    <input id="aum-ed-name" type="text" autocomplete="off" placeholder="Название AU" value="${existing?.name || ''}">
+    <label>Категория</label>
+    <select id="aum-ed-cat">${catOptions}</select>
+    <label>Краткое описание</label>
+    <input id="aum-ed-short" type="text" autocomplete="off" placeholder="для карточки" value="${existing?.short || ''}">
+    <label>Промпт для ИИ <span id="aum-ed-tokcount"></span></label>
+    <textarea id="aum-ed-prompt" rows="8" placeholder="Текст промпта который получит ИИ...">${existing?.prompt || ''}</textarea>
+    ${!isNew && existing?.isCustom ? '<button id="aum-ed-delete" class="aum-btn-danger" style="margin-top:8px;width:100%">🗑 Удалить этот AU</button>' : ''}
+  </div>`;
 
-  document.body.appendChild(overlay);
-
-  const promptEl = overlay.querySelector('#aum-ed-prompt');
-  const tokEl = overlay.querySelector('#aum-ed-tokcount');
-  function updateTok() { tokEl.textContent = `~${countTokens(promptEl.value)} токенов`; }
-  promptEl.addEventListener('input', updateTok);
-  updateTok();
-
-  overlay.querySelector('#aum-editor-close').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#aum-ed-cancel').addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-
-  overlay.querySelector('#aum-ed-save').addEventListener('click', () => {
-    const name = overlay.querySelector('#aum-ed-name').value.trim();
-    const cat  = overlay.querySelector('#aum-ed-cat').value;
-    const short = overlay.querySelector('#aum-ed-short').value.trim();
-    const prompt = promptEl.value.trim();
-    if (!name || !prompt) { showToast('Заполни название и промпт'); return; }
-    const newId = existing?.id || `custom_${Date.now()}`;
-    saveCustomAU({ id: newId, cat, name, short, prompt, isCustom: true });
-    overlay.remove();
-    showToast('✓ Сохранено');
+  const editorPopup = new Popup(html, POPUP_TYPE.CONFIRM, '', {
+    okButton: 'Сохранить',
+    cancelButton: 'Отмена',
+    wide: false,
+    large: false,
   });
 
-  const delBtn = overlay.querySelector('#aum-ed-delete');
-  if (delBtn) {
-    delBtn.addEventListener('click', () => {
-      if (confirm(`Удалить «${existing.name}»?`)) { deleteCustomAU(existing.id); overlay.remove(); }
+  // Навешиваем события после того как попап добавлен в DOM
+  const setupEditor = () => {
+    const promptEl = document.getElementById('aum-ed-prompt');
+    const tokEl = document.getElementById('aum-ed-tokcount');
+    if (promptEl && tokEl) {
+      const updateTok = () => { tokEl.textContent = `~${countTokens(promptEl.value)} токенов`; };
+      promptEl.addEventListener('input', updateTok);
+      updateTok();
+    }
+    const delBtn = document.getElementById('aum-ed-delete');
+    if (delBtn) {
+      delBtn.addEventListener('click', async () => {
+        editorPopup.completeCancelled();
+        if (confirm(`Удалить «${existing.name}»?`)) { deleteCustomAU(existing.id); showToast('✓ Удалено'); }
+      });
+    }
+  };
+
+  // Небольшая задержка чтобы DOM попапа успел создаться
+  requestAnimationFrame(setupEditor);
+
+  const result = await editorPopup.show();
+  if (!result) return;
+
+  const name = document.getElementById('aum-ed-name')?.value?.trim() || '';
+  const cat = document.getElementById('aum-ed-cat')?.value || 'other';
+  const short = document.getElementById('aum-ed-short')?.value?.trim() || '';
+  const prompt = document.getElementById('aum-ed-prompt')?.value?.trim() || '';
+
+  if (!name || !prompt) { showToast('Заполни название и промпт'); return; }
+  const newId = existing?.id || `custom_${Date.now()}`;
+  saveCustomAU({ id: newId, cat, name, short, prompt, isCustom: true });
+  showToast('✓ Сохранено');
+
+  // Обновляем карточки в открытом главном попапе
+  renderCards();
+  renderChips();
+}
+
+// ── Главный попап (через ST Popup) ────────────────────────────
+
+async function showMainPopup() {
+  const content = buildPopupHTML();
+
+  currentPopup = new Popup(content, POPUP_TYPE.TEXT, '', {
+    wide: true,
+    large: false,
+    allowVerticalScrolling: true,
+  });
+
+  // Навешиваем события — используем requestAnimationFrame чтобы DOM попапа был готов
+  requestAnimationFrame(() => {
+    renderCards();
+    renderChips();
+    updateTotalTokens();
+
+    document.getElementById('aum-clear')?.addEventListener('click', clearAll);
+    document.getElementById('aum-btn-add')?.addEventListener('click', () => openEditor(null));
+    document.getElementById('aum-btn-export')?.addEventListener('click', exportJSON);
+
+    document.getElementById('aum-inject-toggle')?.addEventListener('change', e => {
+      getSettings().enabled = e.target.checked;
+      e.target.nextElementSibling?.classList.toggle('aum-tog-on', e.target.checked);
+      saveSettingsDebounced();
     });
+
+    document.getElementById('aum-inject-info')?.addEventListener('click', () => {
+      showToast('AU → системное сообщение после главного промпта');
+    });
+
+    document.getElementById('aum-import-input')?.addEventListener('change', e => {
+      if (e.target.files[0]) importJSON(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    document.querySelectorAll('.aum-cat').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.aum-cat').forEach(b => b.classList.remove('aum-cat-on'));
+        btn.classList.add('aum-cat-on');
+        currentCat = btn.dataset.cat;
+        renderCards();
+      });
+    });
+  });
+
+  await currentPopup.show();
+  currentPopup = null;
+}
+
+// ── Создаём UI и вешаем события ───────────────────────────────
+
+function createUI() {
+  // Точно как MemoryBooks — append в extensionsMenu
+  const menuItem = $(`
+    <div id="aum-menu-container" class="extension_container interactable" tabindex="0">
+      <div id="aum-menu-item" class="list-group-item flex-container flexGap5 interactable" tabindex="0" role="listitem" title="AU Manager">
+        <div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div>
+        <span>AU Manager</span>
+        <span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>
+      </div>
+    </div>`);
+
+  const menu = $('#extensionsMenu');
+  if (menu.length > 0) {
+    menu.prepend(menuItem);
+    updateBadge();
+    console.log('[AU Manager] button injected ✓');
+  } else {
+    console.warn('[AU Manager] extensionsMenu not found');
   }
 }
 
-// ── Основная модалка ───────────────────────────────────────────
-
-function buildModal() {
-  if (document.getElementById('aum-overlay')) return;
-  const el = document.createElement('div');
-  el.id = 'aum-overlay';
-  el.innerHTML = `
-    <div id="aum-modal">
-      <div id="aum-head">
-        <span id="aum-head-title"><i class="fa-solid fa-masks-theater"></i> AU MANAGER</span>
-        <div id="aum-head-right">
-          <span id="aum-inject-info" title="Промпты AU вставляются как системное сообщение сразу после главного системного промпта.">
-            <i class="fa-solid fa-circle-info"></i>
-          </span>
-          <label class="aum-toggle-label" title="Включить/выключить инъекцию AU в промпт">
-            <input type="checkbox" id="aum-inject-toggle" ${getSettings().enabled ? 'checked' : ''}>
-            <span class="aum-tog ${getSettings().enabled ? 'aum-tog-on' : ''}"></span>
-            инъекция
-          </label>
-          <button id="aum-btn-add" class="aum-head-btn" title="Добавить свой AU"><i class="fa-solid fa-plus"></i></button>
-          <button id="aum-btn-export" class="aum-head-btn" title="Экспорт в JSON"><i class="fa-solid fa-file-export"></i></button>
-          <label id="aum-btn-import" class="aum-head-btn" title="Импорт из JSON"><i class="fa-solid fa-file-import"></i><input type="file" id="aum-import-input" accept=".json" style="display:none"></label>
-          <button id="aum-clear" class="aum-head-btn" title="Сбросить все активные AU"><i class="fa-solid fa-trash-can"></i></button>
-          <button id="aum-close" class="aum-head-btn"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-      </div>
-
-      <div id="aum-cats">
-        ${CATEGORIES.map((c, i) => `
-          <button class="aum-cat${i === 0 ? ' aum-cat-on' : ''}" data-cat="${c.id}">
-            <i class="fa-solid ${c.icon}"></i><span>${c.label}</span>
-          </button>`).join('')}
-      </div>
-
-      <div id="aum-card-grid"></div>
-
-      <div id="aum-foot">
-        <div id="aum-foot-top">
-          <span class="aum-foot-label"><i class="fa-solid fa-circle-check"></i> активно:</span>
-          <span id="aum-total-tokens" class="aum-total-tokens"></span>
-        </div>
-        <div id="aum-chips"></div>
-      </div>
-    </div>`;
-
-  document.body.appendChild(el);
-
-  el.addEventListener('click', e => { if (e.target === el) closeModal(); });
-  el.querySelector('#aum-close').addEventListener('click', closeModal);
-  el.querySelector('#aum-clear').addEventListener('click', clearAll);
-
-  el.querySelector('#aum-inject-toggle').addEventListener('change', e => {
-    const tog = e.target.nextElementSibling;
-    getSettings().enabled = e.target.checked;
-    tog.classList.toggle('aum-tog-on', e.target.checked);
-    saveSettingsDebounced();
-  });
-
-  el.querySelector('#aum-inject-info').addEventListener('click', () => {
-    showToast('AU → системное сообщение после главного промпта');
-  });
-
-  el.querySelector('#aum-btn-add').addEventListener('click', () => openEditor(null));
-  el.querySelector('#aum-btn-export').addEventListener('click', exportJSON);
-  el.querySelector('#aum-import-input').addEventListener('change', e => {
-    if (e.target.files[0]) importJSON(e.target.files[0]);
-    e.target.value = '';
-  });
-
-  el.querySelectorAll('.aum-cat').forEach(btn => {
-    btn.addEventListener('click', () => {
-      el.querySelectorAll('.aum-cat').forEach(b => b.classList.remove('aum-cat-on'));
-      btn.classList.add('aum-cat-on');
-      currentCat = btn.dataset.cat;
-      renderCards();
-    });
-  });
-
-  renderCards();
-  renderChips();
-}
-
-function openModal() {
-  buildModal();
-  const ov = document.getElementById('aum-overlay');
-  if (!ov) return;
-  ov.style.display = 'flex';
-  renderCards();
-  renderChips();
-}
-
-function closeModal() {
-  const ov = document.getElementById('aum-overlay');
-  if (ov) ov.style.display = 'none';
-}
-
-// ── Кнопка в extensionsMenu ────────────────────────────────────
-
-function injectButton() {
-  if (document.getElementById('aum_wand_container')) return false;
-
-  const menu = document.getElementById('extensionsMenu')
-    || document.querySelector('.extensions_block')
-    || document.querySelector('#extensionsMenuList');
-  if (!menu) return false;
-
-  const container = document.createElement('div');
-  container.id = 'aum_wand_container';
-  container.className = 'extension_container interactable';
-  container.setAttribute('tabindex', '0');
-
-  const item = document.createElement('div');
-  item.className = 'list-group-item flex-container flexGap5 interactable';
-  item.setAttribute('tabindex', '0');
-  item.setAttribute('role', 'listitem');
-  item.title = 'AU Manager';
-  item.innerHTML = `<div class="fa-solid fa-masks-theater extensionsMenuExtensionButton"></div><span>AU Manager</span><span id="aum-badge" style="display:none;margin-left:6px;background:var(--SmartThemeQuoteColor,#c084c8);color:#fff;border-radius:8px;padding:0 6px;font-size:0.65rem;font-weight:700;line-height:18px;"></span>`;
-
-  // На мобильном touchstart срабатывает ДО того, как ST закрывает меню через click.
-  // preventDefault() внутри touchstart отменяет последующий click — модалка открывается.
-  // На десктопе touchstart не срабатывает, работает обычный click.
-  let touchHandled = false;
-  item.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    touchHandled = true;
-    setTimeout(openModal, 50);
-  }, { passive: false });
-
-  item.addEventListener('click', () => {
-    if (touchHandled) { touchHandled = false; return; }
-    setTimeout(openModal, 10);
-  });
-
-  container.appendChild(item);
-  menu.insertBefore(container, menu.firstChild);
-  updateBadge();
-  console.log('[AU Manager] button injected ✓');
-  return true;
+function setupEventListeners() {
+  // Делегированный клик — точно как MemoryBooks, работает на мобильном
+  $(document).on('click', '#aum-menu-item', showMainPopup);
 }
 
 // ── Init ───────────────────────────────────────────────────────
@@ -532,20 +499,17 @@ jQuery(async () => {
   getSettings();
   eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, onBeforeCombinePrompts);
 
-  let attempts = 0;
-  function tryInject() {
-    if (injectButton()) return;
-    if (attempts++ < 40) setTimeout(tryInject, 400);
-  }
-  tryInject();
-  eventSource.on(event_types.APP_READY, tryInject);
-
-  // Переинъекция при открытии меню (ST скрывает/показывает элементы динамически)
-  document.addEventListener('click', e => {
-    if (e.target.closest('#extensionsMenuButton, [data-id="extensionsMenu"]')) {
-      setTimeout(injectButton, 80);
-    }
+  // Ждём APP_READY как делают все нормальные расширения ST
+  eventSource.on(event_types.APP_READY, () => {
+    createUI();
+    setupEventListeners();
   });
+
+  // Запасной вариант если APP_READY уже был
+  if (document.getElementById('extensionsMenu')) {
+    createUI();
+    setupEventListeners();
+  }
 
   console.log('[AU Manager] v2.0 loaded ✓');
 });

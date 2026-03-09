@@ -1,37 +1,17 @@
 /* ═══════════════════════════════════════════════════════════
-   AU Manager v2.0 — style.css
+   AU Manager v2.0 — стили для контента внутри ST Popup
+   Позиционирование попапа полностью на стороне ST.
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Оверлей — всегда по центру (ПК и телефон) ───────────── */
-#aum-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 999999 !important;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  box-sizing: border-box;
-}
-
-/* ── Модалка ─────────────────────────────────────────────── */
+/* ── Основной контейнер ──────────────────────────────────── */
 #aum-modal {
-  width: min(720px, 100%);
-  max-height: min(85vh, 700px);
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #141414;
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 16px 56px rgba(0,0,0,0.7);
   font-family: monospace, monospace;
   color: #ccc;
-  transition: transform 0.25s ease;
-  will-change: transform;
+  min-width: 320px;
+  max-width: 100%;
+  gap: 0;
 }
 
 /* ── Шапка ───────────────────────────────────────────────── */
@@ -39,12 +19,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 12px;
+  padding: 0 0 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   flex-shrink: 0;
-  background: rgba(255,255,255,0.03);
-  position: relative;
-  user-select: none;
 }
 
 #aum-head-title {
@@ -59,25 +36,26 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .aum-head-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 4px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   color: #aaa;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   transition: background 0.15s, color 0.15s;
   -webkit-tap-highlight-color: transparent;
+  min-width: 30px;
 }
 .aum-head-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
-label.aum-head-btn { cursor: pointer; }
 
 #aum-inject-info {
   cursor: pointer;
@@ -97,7 +75,6 @@ label.aum-head-btn { cursor: pointer; }
   color: #999;
   cursor: pointer;
   user-select: none;
-  margin-right: 4px;
   -webkit-tap-highlight-color: transparent;
 }
 .aum-toggle-label input[type="checkbox"] { display: none; }
@@ -126,11 +103,9 @@ label.aum-head-btn { cursor: pointer; }
 #aum-cats {
   display: flex;
   gap: 3px;
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 0;
   flex-wrap: wrap;
   flex-shrink: 0;
-  background: rgba(0,0,0,0.2);
 }
 
 .aum-cat {
@@ -162,27 +137,25 @@ label.aum-head-btn { cursor: pointer; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 7px;
-  padding: 10px 12px;
+  padding: 4px 0 8px;
   overflow-y: auto;
-  flex: 1;
+  max-height: 45vh;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 #aum-card-grid::-webkit-scrollbar { width: 4px; }
-#aum-card-grid::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15); border-radius: 2px;
-}
+#aum-card-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
 .aum-empty {
   grid-column: 1/-1;
   text-align: center;
-  padding: 40px 20px;
+  padding: 30px 20px;
   color: #666;
   font-size: 0.8rem;
   line-height: 1.7;
 }
 
-/* ── Карточка AU ──────────────────────────────────────────── */
+/* ── Карточка ────────────────────────────────────────────── */
 .aum-card {
   position: relative;
   padding: 9px 10px 7px;
@@ -199,46 +172,31 @@ label.aum-head-btn { cursor: pointer; }
   background: rgba(192,132,200,0.1) !important;
   border-color: rgba(192,132,200,0.5) !important;
 }
-
-.aum-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 4px;
-  margin-bottom: 3px;
-}
+.aum-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 3px; }
 .aum-card-name { font-size: 0.82rem; font-weight: 700; color: #e0e0e0; line-height: 1.2; flex: 1; }
-
 .aum-card-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .aum-card-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
+  width: 24px; height: 24px;
   border-radius: 3px; border: none;
   background: none; color: #777;
   cursor: pointer; font-size: 0.72rem;
   transition: color 0.15s, background 0.15s;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
+  padding: 0; -webkit-tap-highlight-color: transparent;
 }
 .aum-card-btn:hover { color: #ddd; background: rgba(255,255,255,0.1); }
 .aum-del-btn:hover { color: #f87171; }
 .aum-tog-btn.aum-tog-on { color: #c084c8; }
-
 .aum-card-cat { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: #777; margin-bottom: 4px; display: flex; align-items: center; gap: 3px; }
 .aum-card-short { font-size: 0.7rem; color: #999; line-height: 1.4; word-break: break-word; }
 .aum-card-tokens { font-size: 0.6rem; color: #555; margin-top: 5px; text-align: right; }
 
 /* ── Подвал ──────────────────────────────────────────────── */
-#aum-foot {
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding: 8px 12px;
-  flex-shrink: 0;
-  background: rgba(0,0,0,0.2);
-}
+#aum-foot { border-top: 1px solid rgba(255,255,255,0.08); padding: 8px 0 0; }
 #aum-foot-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .aum-foot-label { font-size: 0.68rem; color: #777; text-transform: uppercase; letter-spacing: 0.05em; }
 .aum-total-tokens { font-size: 0.68rem; color: #c084c8; font-weight: 600; }
-#aum-chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 72px; overflow-y: auto; }
+#aum-chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 60px; overflow-y: auto; }
 .aum-chip {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; border-radius: 3px; font-size: 0.68rem;
@@ -249,221 +207,105 @@ label.aum-head-btn { cursor: pointer; }
   cursor: pointer; opacity: 0.5; font-size: 0.6rem;
   background: none; border: none; color: inherit;
   padding: 0; transition: opacity 0.15s; line-height: 1;
-  -webkit-tap-highlight-color: transparent;
 }
 .aum-chip-x:hover { opacity: 1; }
 .aum-none { font-size: 0.7rem; color: #555; font-style: italic; }
 
-/* ── Редактор ─────────────────────────────────────────────── */
-/* z-index задаётся инлайново в JS (9999999 — выше оверлея) */
-
-.aum-editor-modal {
-  width: min(580px, 100%);
-  max-height: min(88vh, 700px);
+/* ── Редактор AU (внутри ST Popup) ───────────────────────── */
+.aum-editor-inner {
   display: flex;
   flex-direction: column;
-  border-radius: 7px;
-  overflow: hidden;
-  background: #161616;
-  border: 1px solid rgba(255,255,255,0.13);
-  box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+  gap: 6px;
   font-family: monospace;
-  color: #ccc;
-  transition: transform 0.25s ease;
-  will-change: transform;
+  min-width: 280px;
 }
-.aum-editor-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;
-  background: rgba(255,255,255,0.03);
+.aum-editor-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ddd;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
 }
-.aum-editor-head button {
-  background: none; border: none; color: #888; cursor: pointer;
-  font-size: 0.9rem; min-width: 36px; min-height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
+.aum-editor-inner label {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
 }
-.aum-editor-head button:hover { color: #fff; }
-.aum-editor-body {
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 14px; overflow-y: auto; flex: 1;
-  -webkit-overflow-scrolling: touch;
-}
-.aum-editor-body label {
-  font-size: 0.7rem; color: #888;
-  text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;
-}
-.aum-editor-body input,
-.aum-editor-body select,
-.aum-editor-body textarea {
+.aum-editor-inner input,
+.aum-editor-inner select,
+.aum-editor-inner textarea {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 4px; color: #ddd;
-  padding: 7px 10px; font-family: monospace;
-  font-size: 0.78rem; outline: none;
+  padding: 8px 10px; font-family: monospace;
+  font-size: 16px; /* 16px = нет zoom на iOS */
+  outline: none;
   transition: border-color 0.15s; resize: vertical;
+  width: 100%; box-sizing: border-box;
 }
-.aum-editor-body input:focus,
-.aum-editor-body select:focus,
-.aum-editor-body textarea:focus { border-color: rgba(192,132,200,0.5); }
-.aum-editor-body select option { background: #1e1e1e; }
-.aum-editor-foot {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  background: rgba(0,0,0,0.2);
-}
-.aum-btn-primary {
-  padding: 6px 16px; border-radius: 4px;
-  background: rgba(192,132,200,0.3); border: 1px solid rgba(192,132,200,0.5);
-  color: #e0b8e8; cursor: pointer; font-family: monospace;
-  font-size: 0.78rem; font-weight: 600; transition: background 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.aum-btn-primary:hover { background: rgba(192,132,200,0.5); color: #fff; }
-.aum-btn-sec {
-  padding: 6px 14px; border-radius: 4px;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-  color: #999; cursor: pointer; font-family: monospace;
-  font-size: 0.78rem; transition: background 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.aum-btn-sec:hover { background: rgba(255,255,255,0.12); color: #ddd; }
+.aum-editor-inner input:focus,
+.aum-editor-inner select:focus,
+.aum-editor-inner textarea:focus { border-color: rgba(192,132,200,0.5); }
+.aum-editor-inner select option { background: #1e1e1e; }
+
 .aum-btn-danger {
-  padding: 6px 14px; border-radius: 4px;
+  padding: 8px 14px; border-radius: 4px;
   background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
   color: #f87171; cursor: pointer; font-family: monospace;
-  font-size: 0.78rem; transition: background 0.15s;
+  font-size: 0.82rem; transition: background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
 .aum-btn-danger:hover { background: rgba(239,68,68,0.3); }
 
-/* ═══════════════════════════════════════════════════════════
-   МОБИЛЬНАЯ АДАПТАЦИЯ ≤ 600px
-   ═══════════════════════════════════════════════════════════ */
+/* ── Мобильная адаптация (внутри контента) ───────────────── */
 @media (max-width: 600px) {
-
-  /* Модалка прижата к низу экрана */
-  #aum-overlay {
-    padding: 0 !important;
-    align-items: flex-end !important;
-  }
-
-  #aum-modal {
-    width: 100% !important;
-    max-height: 90vh !important;
-    border-radius: 14px 14px 0 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  /* Кнопки шапки крупнее — минимум для пальца */
-  .aum-head-btn {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 0.85rem !important;
-  }
-
-  /* Тоггл: прячем текст "инъекция", только переключатель */
-  .aum-toggle-label span:not(.aum-tog) { display: none !important; }
-
-  /* Категории — горизонтальный скролл без переноса */
   #aum-cats {
     flex-wrap: nowrap !important;
-    overflow-x: auto !important;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 7px 8px !important;
-    gap: 4px !important;
+    gap: 4px;
   }
   #aum-cats::-webkit-scrollbar { display: none; }
 
   .aum-cat {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
-    padding: 8px 12px !important;
-    min-height: 40px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 11px !important;
   }
-  /* Только иконки у неактивных */
   .aum-cat span { display: none; }
   .aum-cat i { font-size: 0.9rem !important; opacity: 1 !important; }
-  /* Активная — показываем текст */
   .aum-cat-on span { display: inline !important; margin-left: 5px; }
 
-  /* 1 колонка карточек */
   #aum-card-grid {
     grid-template-columns: 1fr !important;
-    gap: 6px !important;
-    padding: 8px !important;
+    max-height: 50vh;
   }
 
-  .aum-card { padding: 11px 12px 9px !important; }
-  .aum-card-name { font-size: 0.86rem !important; }
-  .aum-card-short { font-size: 0.73rem !important; }
-
-  /* Кнопки на карточках крупнее */
   .aum-card-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .aum-head-btn {
     width: 34px !important;
     height: 34px !important;
-    font-size: 0.85rem !important;
   }
 
-  /* Редактор — тоже снизу */
-  #aum-editor-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
-  .aum-editor-modal {
-    width: 100% !important;
-    max-height: 92vh !important;
-    border-radius: 14px 14px 0 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+  .aum-inj-label { display: none; }
 
-  /* 16px на inputs — iOS не делает zoom при фокусе */
-  .aum-editor-body input,
-  .aum-editor-body select,
-  .aum-editor-body textarea {
-    font-size: 16px !important;
-    padding: 10px 12px !important;
-  }
-
-  .aum-btn-primary, .aum-btn-sec, .aum-btn-danger {
-    padding: 11px 20px !important;
-    font-size: 0.85rem !important;
-    min-height: 44px;
-  }
-
-  .aum-chip { padding: 4px 10px; font-size: 0.72rem; }
-  .aum-chip-x { padding: 3px 5px; font-size: 0.75rem; }
+  .aum-chip { padding: 4px 10px; }
 }
 
-/* ── Планшет ─────────────────────────────────────────────── */
-@media (min-width: 601px) and (max-width: 900px) {
-  #aum-modal { width: min(96vw, 700px) !important; }
-  #aum-card-grid { grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important; }
-}
-
-/* ── Убираем hover на тач — нет залипания ────────────────── */
+/* ── Убираем hover-залипание на тач ─────────────────────── */
 @media (hover: none) and (pointer: coarse) {
   .aum-card:not(.aum-on):hover {
     background: rgba(255,255,255,0.03) !important;
     border-color: rgba(255,255,255,0.08) !important;
   }
-  .aum-head-btn:hover { background: rgba(255,255,255,0.06) !important; color: #aaa !important; }
-  .aum-cat:not(.aum-cat-on):hover { background: rgba(255,255,255,0.05) !important; color: #bbb !important; }
-
-  /* Тап-фидбек */
   .aum-card:active { background: rgba(255,255,255,0.09) !important; }
   .aum-card.aum-on:active { background: rgba(192,132,200,0.18) !important; }
-  .aum-head-btn:active { background: rgba(255,255,255,0.16) !important; }
-  .aum-cat:active { background: rgba(255,255,255,0.1) !important; }
-  .aum-btn-primary:active { background: rgba(192,132,200,0.55) !important; }
 }
