@@ -422,10 +422,17 @@ async function openEditor(id) {
     large: false,
   });
 
-  // Навешиваем события после того как попап добавлен в DOM
+  // Сохраняем ссылки на элементы в замыкании — они останутся живы даже после
+  // того как ST Popup уберёт себя из DOM при нажатии «Сохранить».
+  let nameEl, catEl, shortEl, promptEl;
+
   const setupEditor = () => {
-    const promptEl = document.getElementById('aum-ed-prompt');
+    nameEl   = document.getElementById('aum-ed-name');
+    catEl    = document.getElementById('aum-ed-cat');
+    shortEl  = document.getElementById('aum-ed-short');
+    promptEl = document.getElementById('aum-ed-prompt');
     const tokEl = document.getElementById('aum-ed-tokcount');
+
     if (promptEl && tokEl) {
       const updateTok = () => { tokEl.textContent = `~${countTokens(promptEl.value)} токенов`; };
       promptEl.addEventListener('input', updateTok);
@@ -446,10 +453,11 @@ async function openEditor(id) {
   const result = await editorPopup.show();
   if (!result) return;
 
-  const name = document.getElementById('aum-ed-name')?.value?.trim() || '';
-  const cat = document.getElementById('aum-ed-cat')?.value || 'other';
-  const short = document.getElementById('aum-ed-short')?.value?.trim() || '';
-  const prompt = document.getElementById('aum-ed-prompt')?.value?.trim() || '';
+  // Читаем из сохранённых ссылок — работает даже если элементы уже detached от DOM
+  const name   = nameEl?.value?.trim()   || '';
+  const cat    = catEl?.value            || 'other';
+  const short  = shortEl?.value?.trim()  || '';
+  const prompt = promptEl?.value?.trim() || '';
 
   if (!name || !prompt) { showToast('Заполни название и промпт'); return; }
   const newId = existing?.id || `custom_${Date.now()}`;
