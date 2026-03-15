@@ -361,10 +361,32 @@ function onBeforeCombinePrompts(chat) {
   if (!s.enabled) return;
   const active = getActiveAUs();
   if (!active.length) return;
-  const body = active.map(a => a.prompt).join('\n\n');
-  const msg = { role: 'system', content: `[AU SETTINGS — прочитай и следуй этим правилам мира]\n${body}` };
+
+  const names = active.map(a => a.name).join(', ');
+  const body  = active.map(a => a.prompt).join('\n\n');
+
+  const wrapper = `[ПРАВИЛА МИРА — активные АУ: ${names}]
+Эта история разворачивается в альтернативной вселенной. Правила ниже работают в этом мире как физика, биология и социальные нормы. Применяй их последовательно и во всёх ответах без исключений.
+
+${body}
+
+[Конец правил мира. Всё вышеперечисленное — фундамент данной истории.]`;
+
   const arr = Array.isArray(chat) ? chat : (chat && Array.isArray(chat.chat) ? chat.chat : null);
-  if (arr) arr.splice(1, 0, msg);
+  if (!arr) return;
+
+  // Дописываем в существующий system-промт — модель точно его увидит
+  const sysIdx = arr.findIndex(m => m.role === 'system');
+  if (sysIdx !== -1) {
+    arr[sysIdx] = {
+      ...arr[sysIdx],
+      content: arr[sysIdx].content
+        ? arr[sysIdx].content + '\n\n' + wrapper
+        : wrapper
+    };
+  } else {
+    arr.unshift({ role: 'system', content: wrapper });
+  }
 }
 
 // ── UI state ───────────────────────────────────────────────────
