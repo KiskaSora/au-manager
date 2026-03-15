@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { extension_settings } from '../../../extensions.js';
-import { eventSource, event_types, saveSettingsDebounced } from '../../../../script.js';
+import { eventSource, event_types, saveSettingsDebounced, setExtensionPrompt, extension_prompt_types } from '../../../../script.js';
 import { Popup, POPUP_TYPE } from '../../../popup.js';
 
 const EXT_NAME = 'au_manager';
@@ -234,12 +234,14 @@ function toggleAU(id) {
   if (idx === -1) s.active_aus.push(id);
   else s.active_aus.splice(idx, 1);
   saveSettingsDebounced();
+  updatePromptInjection();
   syncUI();
 }
 
 function clearAll() {
   getSettings().active_aus = [];
   saveSettingsDebounced();
+  updatePromptInjection();
   syncUI();
 }
 
@@ -249,6 +251,7 @@ function saveCustomAU(data) {
   if (idx === -1) s.custom_aus.push(data);
   else s.custom_aus[idx] = data;
   saveSettingsDebounced();
+  updatePromptInjection();
   syncUI();
 }
 
@@ -257,6 +260,7 @@ function deleteCustomAU(id) {
   s.custom_aus = s.custom_aus.filter(a => a.id !== id);
   s.active_aus = s.active_aus.filter(aid => aid !== id);
   saveSettingsDebounced();
+  updatePromptInjection();
   syncUI();
 }
 
@@ -356,36 +360,30 @@ function showToast(msg) {
 
 // ── Prompt injection ───────────────────────────────────────────
 
-function onBeforeCombinePrompts(chat) {
+const PROMPT_KEY = EXT_NAME + '_au_injection';
+
+function buildAUPrompt() {
   const s = getSettings();
-  if (!s.enabled) return;
+  if (!s.enabled) return '';
   const active = getActiveAUs();
-  if (!active.length) return;
+  if (!active.length) return '';
 
   const names = active.map(a => a.name).join(', ');
   const body  = active.map(a => a.prompt).join('\n\n');
 
-  const wrapper = `[ПРАВИЛА МИРА — активные АУ: ${names}]
-Эта история разворачивается в альтернативной вселенной. Правила ниже работают в этом мире как физика, биология и социальные нормы. Применяй их последовательно и во всёх ответах без исключений.
+  return `[ПРАВИЛА МИРА — активные АУ: ${names}]
+Эта история разворачивается в альтернативной вселенной. Все правила ниже действуют как физика, биология и социальные нормы этого мира. Применяй их последовательно в каждом ответе без исключений.
 
 ${body}
 
-[Конец правил мира. Всё вышеперечисленное — фундамент данной истории.]`;
+[Конец правил мира. Всё вышеперечисленное — обязательный фундамент этой истории.]`;
+}
 
-  const arr = Array.isArray(chat) ? chat : (chat && Array.isArray(chat.chat) ? chat.chat : null);
-  if (!arr) return;
-
-  // Дописываем в существующий system-промт — модель точно его увидит
-  const sysIdx = arr.findIndex(m => m.role === 'system');
-  if (sysIdx !== -1) {
-    arr[sysIdx] = {
-      ...arr[sysIdx],
-      content: arr[sysIdx].content
-        ? arr[sysIdx].content + '\n\n' + wrapper
-        : wrapper
-    };
-  } else {
-    arr.unshift({ role: 'system', content: wrapper });
+function updatePromptInjection() {
+  try {
+    setExtensionPrompt(PROMPT_KEY, buildAUPrompt(), extension_prompt_types.IN_CHAT, 0);
+  } catch(e) {
+    console.warn('[AU Manager] prompt injection error:', e);
   }
 }
 
@@ -631,6 +629,7 @@ async function showMainPopup() {
       getSettings().enabled = e.target.checked;
       e.target.nextElementSibling?.classList.toggle('aum-tog-on', e.target.checked);
       saveSettingsDebounced();
+      updatePromptInjection();
     });
 
     document.getElementById('aum-inject-info')?.addEventListener('click', showInfoPopup);
@@ -698,8 +697,10 @@ function init() {
 jQuery(async () => {
   console.log('[AU Manager] jQuery ready');
   getSettings();
-  eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, onBeforeCombinePrompts);
+  eventSource.on(event_types.MESSAGE_SENT, updatePromptInjection);
+  eventSource.on(event_types.CHAT_CHANGED, updatePromptInjection);
   eventSource.on(event_types.APP_READY, init);
+  eventSource.on(event_types.APP_READY, updatePromptInjection);
   // Если APP_READY уже был — пробуем сразу
   setTimeout(init, 300);
   console.log('[AU Manager] v2.0 loaded ✓');
