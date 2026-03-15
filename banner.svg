@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300">
+
+<defs>
+<linearGradient id="bg" x1="0" x2="1">
+
+<stop offset="0%" stop-color="#0d0d12"></stop>
+<stop offset="100%" stop-color="#14141d"></stop>
+
+</linearGradient>
+
+<radialGradient id="glow">
+<stop offset="0%" stop-color="#a88bff" stop-opacity="0.7"></stop>
+<stop offset="100%" stop-color="#a88bff" stop-opacity="0"></stop>
+</radialGradient>
+
+</defs>
+
+<rect width="1200" height="300" fill="url(#bg)"></rect>
+
+<!-- glow -->
+<circle cx="300" cy="150" r="120" fill="url(#glow)"></circle>
+<circle cx="900" cy="120" r="100" fill="url(#glow)"></circle>
+
+<!-- title -->
+<text x="600" y="150" text-anchor="middle" fill="#e5e5f0" font-size="48" font-family="Segoe UI" font-weight="600">
+AU Manager
+</text>
+
+<text x="600" y="190" text-anchor="middle" fill="#9a9ab3" font-size="18" font-family="Segoe UI">
+ расширение для SillyTavern · библиотека альтернативных вселенных</text>
+
+ <!-- ── разделительная линия ── -->
+  <line x1="420" y1="218" x2="780" y2="218" stroke="#6040a0" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- ── бейджи-пилюли ── -->
+  <!-- v2.0 -->
+  <g transform="translate(394, 242)">
+    <rect x="0" y="0" width="68" height="22" rx="11" fill="#2a1840" stroke="#7050b0" stroke-width="1"/>
+    <text x="34" y="15" text-anchor="middle" font-family="Segoe UI, Arial" font-size="11" fill="#c0a0f0">v 2.0</text>
+  </g>
+  <!-- 68 AU -->
+  <g transform="translate(472, 242)">
+    <rect x="0" y="0" width="88" height="22" rx="11" fill="#1e2840" stroke="#4060a0" stroke-width="1"/>
+    <text x="44" y="15" text-anchor="middle" font-family="Segoe UI, Arial" font-size="11" fill="#90b0e8">68 АУ</text>
+  </g>
+  <!-- SillyTavern -->
+  <g transform="translate(570, 242)">
+    <rect x="0" y="0" width="112" height="22" rx="11" fill="#1e2818" stroke="#406030" stroke-width="1"/>
+    <text x="56" y="15" text-anchor="middle" font-family="Segoe UI, Arial" font-size="11" fill="#90c870">SillyTavern</text>
+  </g>
+  <!-- mobile -->
+  <g transform="translate(692, 242)">
+    <rect x="0" y="0" width="116" height="22" rx="11" fill="#28181e" stroke="#804060" stroke-width="1"/>
+    <text x="58" y="15" text-anchor="middle" font-family="Segoe UI, Arial" font-size="11" fill="#e090a8">mobile-friendly</text>
+  </g>
+
+</svg>
