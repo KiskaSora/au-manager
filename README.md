@@ -53,9 +53,7 @@ git clone https://github.com/KiskaSora/au-manager
 
 ### Интерфейс
 
-```
 ![интерфейс](https://i.postimg.cc/vH6RzTVd/Snimok-ekrana-2026-03-15-163009.png)
-```
 
 ### Включить АУ
 
