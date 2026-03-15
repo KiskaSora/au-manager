@@ -27,7 +27,7 @@
 1. Открой **Extensions → Install Extension**
 2. Вставь ссылку на репозиторий:
    ```
-   https://github.com/KiskaSora/au-manager
+   https://github.com/KiskaSora/au-manager.git
    ```
 3. Нажми **Install** → расширение появится в меню Extensions
 
